@@ -51,7 +51,7 @@ const Main: FC<IMainProps> = () => {
 
   useEffect(() => {
     if (APP_INFO?.title)
-      document.title = `${APP_INFO.title} - Powered by Dify`
+      document.title = APP_INFO.title
   }, [APP_INFO?.title])
 
   // onData change thought (the produce obj). https://github.com/immerjs/immer/issues/576
@@ -334,6 +334,8 @@ const Main: FC<IMainProps> = () => {
     }
   }
 
+  const [remainingUsage, setRemainingUsage] = useState<number | null>(null)
+
   const handleSend = async (message: string, files?: VisionFile[]) => {
     if (isResponding) {
       notify({ type: 'info', message: t('app.errorMessage.waitForResponse') })
@@ -411,7 +413,7 @@ const Main: FC<IMainProps> = () => {
       getAbortController: (abortController) => {
         setAbortController(abortController)
       },
-      onData: (message: string, isFirstMessage: boolean, { conversationId: newConversationId, messageId, taskId }: any) => {
+      onData: (message: string, isFirstMessage: boolean, { conversationId: newConversationId, messageId, taskId, remainingUsage: usageRemaining }: any) => {
         if (!isAgentMode) {
           responseItem.content = responseItem.content + message
         }
@@ -428,6 +430,12 @@ const Main: FC<IMainProps> = () => {
         if (isFirstMessage && newConversationId)
           tempNewConversationId = newConversationId
 
+        // 获取并记录剩余使用次数
+        if (usageRemaining !== undefined) {
+          setRemainingUsage(usageRemaining)
+          responseItem.remainingUsage = usageRemaining
+        }
+
         setMessageTaskId(taskId)
         // has switched to other conversation
         if (prevTempNewConversationId !== getCurrConversationId()) {
@@ -442,23 +450,22 @@ const Main: FC<IMainProps> = () => {
         })
       },
       async onCompleted(hasError?: boolean) {
-        if (hasError)
-          return
-
-        if (getConversationIdChangeBecauseOfNew()) {
-          const { data: allConversations }: any = await fetchConversations()
-          const newItem: any = await generationConversationName(allConversations[0].id)
-
-          const newAllConversations = produce(allConversations, (draft: any) => {
-            draft[0].name = newItem.name
-          })
-          setConversationList(newAllConversations as any)
-        }
-        setConversationIdChangeBecauseOfNew(false)
-        resetNewConversationInputs()
-        setChatNotStarted()
-        setCurrConversationId(tempNewConversationId, APP_ID, true)
         setRespondingFalse()
+        if (!hasError) {
+          if (getConversationIdChangeBecauseOfNew()) {
+            const { data: allConversations }: any = await fetchConversations()
+            const newItem: any = await generationConversationName(allConversations[0].id)
+
+            const newAllConversations = produce(allConversations, (draft: any) => {
+              draft[0].name = newItem.name
+            })
+            setConversationList(newAllConversations as any)
+          }
+          setConversationIdChangeBecauseOfNew(false)
+          resetNewConversationInputs()
+          setChatNotStarted()
+          setCurrConversationId(tempNewConversationId, APP_ID, true)
+        }
       },
       onFile(file) {
         const lastThought = responseItem.agent_thoughts?.[responseItem.agent_thoughts?.length - 1]
@@ -551,12 +558,23 @@ const Main: FC<IMainProps> = () => {
           },
         ))
       },
-      onError() {
+      onError(error) {
         setRespondingFalse()
         // role back placeholder answer
         setChatList(produce(getChatList(), (draft) => {
           draft.splice(draft.findIndex(item => item.id === placeholderAnswerId), 1)
         }))
+
+        // 处理使用次数超限错误
+        try {
+          const errorObj = error as any
+          if (errorObj && errorObj.status === 429) {
+            setRemainingUsage(0)
+            notify({ type: 'error', message: '您已达到使用次数上限，请稍后再试' })
+          }
+        } catch (e) {
+          // 忽略类型错误
+        }
       },
       onWorkflowStarted: ({ workflow_run_id, task_id }) => {
         // taskIdRef.current = task_id
@@ -678,7 +696,13 @@ const Main: FC<IMainProps> = () => {
 
           {
             hasSetInputs && (
-              <div className='relative grow h-[200px] pc:w-[794px] max-w-full mobile:w-full pb-[66px] mx-auto mb-3.5 overflow-hidden'>
+              <div className='relative grow h-[200px] pc:w-full max-w-full mobile:w-full pb-[66px] mx-auto mb-3.5 overflow-hidden'>
+                {/* 显示剩余使用次数 */}
+                {remainingUsage !== null && (
+                  <div className="bg-blue-50 text-blue-800 p-2 text-sm text-center rounded-md mx-4 mb-2">
+                    剩余使用次数: {remainingUsage} 次
+                  </div>
+                )}
                 <div className='h-full overflow-y-auto' ref={chatListDomRef}>
                   <Chat
                     chatList={chatList}

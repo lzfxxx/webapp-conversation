@@ -89,3 +89,14 @@
 .textArea:focus+div .sendBtn {
   background-image: url(./icons/send-active.svg);
 }
+
+.answerWrap {
+  min-width: 1024px;
+}
+
+@media (max-width: 784px) {
+  .answerWrap {
+    min-width: 0;
+    width: 100%;
+  }
+}

@@ -99,6 +99,7 @@ export type IOnDataMoreInfo = {
   messageId: string
   errorMessage?: string
   errorCode?: string
+  remainingUsage?: number
 }
 
 export type IOnData = (message: string, isFirstMessage: boolean, moreInfo: IOnDataMoreInfo) => void
@@ -155,6 +156,9 @@ const handleStream = (
   if (!response.ok)
     throw new Error('Network response was not ok')
 
+  const remainingUsage = response.headers.get('X-Remaining-Usage')
+  const remainingUsageNumber = remainingUsage ? parseInt(remainingUsage, 10) : undefined
+
   const reader = response.body?.getReader()
   const decoder = new TextDecoder('utf-8')
   let buffer = ''
@@ -180,6 +184,7 @@ const handleStream = (
               onData('', isFirstMessage, {
                 conversationId: bufferObj?.conversation_id,
                 messageId: bufferObj?.message_id,
+                remainingUsage: remainingUsageNumber,
               })
               return
             }
@@ -189,6 +194,7 @@ const handleStream = (
                 messageId: '',
                 errorMessage: bufferObj?.message,
                 errorCode: bufferObj?.code,
+                remainingUsage: remainingUsageNumber,
               })
               hasError = true
               onCompleted?.(true)
@@ -200,6 +206,7 @@ const handleStream = (
                 conversationId: bufferObj.conversation_id,
                 taskId: bufferObj.task_id,
                 messageId: bufferObj.id,
+                remainingUsage: remainingUsageNumber,
               })
               isFirstMessage = false
             }
@@ -236,6 +243,7 @@ const handleStream = (
           conversationId: undefined,
           messageId: '',
           errorMessage: `${e}`,
+          remainingUsage: remainingUsageNumber,
         })
         hasError = true
         onCompleted?.(true)

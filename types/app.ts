@@ -94,6 +94,7 @@ export type ChatItem = IChatItem & {
   isError?: boolean
   workflow_run_id?: string
   workflowProcess?: WorkflowProcess
+  remainingUsage?: number
 }
 
 export type ResponseHolder = {}
