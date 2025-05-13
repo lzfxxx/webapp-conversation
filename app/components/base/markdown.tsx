@@ -55,7 +55,7 @@ function HtmlPreviewWithIframe({ html }: { html: string }) {
           background: '#fafbfc',
           minHeight: 600,
         }}
-        sandbox="allow-scripts allow-same-origin"
+        sandbox="allow-scripts allow-same-origin allow-popups"
         title="HTML 预览"
       />
     </div>
