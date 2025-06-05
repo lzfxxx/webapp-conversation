@@ -28,7 +28,7 @@ NEXT_PUBLIC_API_URL=
 ```js
 export const APP_INFO: AppInfo = {
   title: '浙大教学助手',
-  description: '',
+  description: '你可以输入教学主题，我会帮你研究并生成可视化教材',
   copyright: '',
   privacy_policy: '',
   default_language: 'zh-Hans'
