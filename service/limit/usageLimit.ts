@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 
 const USAGE_FILE = path.join(process.cwd(), 'data', 'usage.json')
-const MAX_USAGE = 20 // 最大使用次数限制
+const MAX_USAGE = parseInt(process.env.MAX_USAGE_LIMIT || '20') // 最大使用次数限制
 
 // 确保数据目录存在
 if (!fs.existsSync(path.dirname(USAGE_FILE))) {

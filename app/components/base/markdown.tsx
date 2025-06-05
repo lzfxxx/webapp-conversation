@@ -5,8 +5,11 @@ import RemarkMath from 'remark-math'
 import RemarkBreaks from 'remark-breaks'
 import RehypeKatex from 'rehype-katex'
 import RemarkGfm from 'remark-gfm'
+import RehypeRaw from 'rehype-raw'
 import SyntaxHighlighter from 'react-syntax-highlighter'
 import { atelierHeathLight } from 'react-syntax-highlighter/dist/esm/styles/hljs'
+import { flow } from 'lodash-es'
+import ThinkBlock from './think-block'
 
 // 用 iframe 实现 HTML 预览，支持 tailwind 和外部资源
 function HtmlPreviewWithIframe({ html }: { html: string }) {
@@ -62,15 +65,28 @@ function HtmlPreviewWithIframe({ html }: { html: string }) {
   )
 }
 
+// 预处理 think 标签
+const preprocessThinkTag = (content: string) => {
+  const thinkOpenTagRegex = /<think>\n/g
+  const thinkCloseTagRegex = /\n<\/think>/g
+  return flow([
+    (str: string) => str.replace(thinkOpenTagRegex, '<details data-think=true>\n'),
+    (str: string) => str.replace(thinkCloseTagRegex, '\n[ENDTHINKFLAG]</details>'),
+  ])(content)
+}
+
 export function Markdown(props: { content: string }) {
+  const processedContent = preprocessThinkTag(props.content)
   return (
     <div className="markdown-body">
       <ReactMarkdown
         remarkPlugins={[RemarkMath, RemarkGfm, RemarkBreaks]}
         rehypePlugins={[
           RehypeKatex,
+          RehypeRaw as any,
         ]}
         components={{
+          details: ThinkBlock,
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '')
             // 用 iframe 预览 html，不展示代码
@@ -115,7 +131,7 @@ export function Markdown(props: { content: string }) {
         }}
         linkTarget={'_blank'}
       >
-        {props.content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   )

@@ -666,6 +666,7 @@ const Main: FC<IMainProps> = () => {
         isMobile={isMobile}
         onShowSideBar={showSidebar}
         onCreateNewChat={() => handleConversationIdChange('-1')}
+        remainingUsage={remainingUsage}
       />
       <div className="flex rounded-t-2xl bg-white overflow-hidden">
         {/* sidebar */}
@@ -697,12 +698,6 @@ const Main: FC<IMainProps> = () => {
           {
             hasSetInputs && (
               <div className='relative grow h-[200px] pc:w-full max-w-full mobile:w-full pb-[66px] mx-auto mb-3.5 overflow-hidden'>
-                {/* 显示剩余使用次数 */}
-                {remainingUsage !== null && (
-                  <div className="bg-blue-50 text-blue-800 p-2 text-sm text-center rounded-md mx-4 mb-2">
-                    剩余使用次数: {remainingUsage} 次
-                  </div>
-                )}
                 <div className='h-full overflow-y-auto' ref={chatListDomRef}>
                   <Chat
                     chatList={chatList}
